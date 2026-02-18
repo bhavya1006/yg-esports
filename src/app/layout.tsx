@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   description:
     "India's community-first esports platform. Tier-based Valorant tournaments, free scrims, verified competitive play. Join Yuva Gabbrus and level up.",
   keywords: ["esports", "valorant", "tournament", "india", "yuva gabbrus", "YG", "competitive gaming"],
+  icons: {
+    icon: "/YG-logo.jpg",
+    apple: "/YG-logo.jpg",
+  },
 };
 
 export default function RootLayout({
