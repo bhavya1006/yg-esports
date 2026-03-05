@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 const regions = ["India", "SEA", "EU", "NA", "KR", "JP", "BR", "LATAM"];
 
@@ -38,7 +39,12 @@ export default function SignUpPage() {
         return;
       }
 
-      // Success — move to verify step
+      // Success — auto sign in then move to verify step
+      await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
       setStep("verify");
     } catch {
       setError("Network error. Please try again.");
@@ -274,7 +280,7 @@ export default function SignUpPage() {
             <div className="space-y-3">
               <a
                 href="/api/verify/riot/start"
-                className="cyber-btn cyber-btn-primary justify-center w-full max-w-xs mx-auto inline-flex items-center gap-2"
+                className="cyber-btn cyber-btn-primary inline-flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
@@ -283,7 +289,7 @@ export default function SignUpPage() {
               </a>
               <Link
                 href="/"
-                className="block text-center text-sm text-gray-500 hover:text-gray-300 transition-colors"
+                className="block text-sm text-gray-500 hover:text-gray-300 transition-colors"
               >
                 Skip, I&apos;ll do it later →
               </Link>
