@@ -80,7 +80,7 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -152,6 +152,8 @@ export default function ProfilePage() {
       const updated = await res.json();
       setProfile((prev) => prev ? { ...prev, image: updated.image } : prev);
       setShowAvatarPicker(false);
+      // Refresh session so Navbar avatar updates
+      await updateSession();
     } catch {
       setError("Failed to update avatar");
     } finally {

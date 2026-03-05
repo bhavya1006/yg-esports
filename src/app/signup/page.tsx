@@ -261,30 +261,38 @@ export default function SignUpPage() {
               </div>
 
               {verifyStatus === "unverified" && (
-                <button
-                  onClick={() => setVerifyStatus("pending")}
-                  className="cyber-btn cyber-btn-primary justify-center w-full max-w-xs mx-auto"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                  Connect Riot Account (OAuth)
-                </button>
+                <div className="space-y-3">
+                  <a
+                    href="/api/verify/riot/start"
+                    className="cyber-btn cyber-btn-primary justify-center w-full max-w-xs mx-auto"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    Sign in with Riot
+                  </a>
+                  <Link
+                    href="/"
+                    className="block text-sm text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    Skip, I&apos;ll do it later →
+                  </Link>
+                </div>
               )}
 
               {verifyStatus === "pending" && (
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 text-sm rounded">
                     <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
-                    Verification Pending...
+                    Redirecting to Riot...
                   </div>
-                  <p className="text-xs text-gray-500">Connecting to Riot OAuth. This usually takes a few seconds.</p>
-                  <button
-                    onClick={() => setVerifyStatus("verified")}
-                    className="cyber-btn text-xs py-2 px-4"
+                  <p className="text-xs text-gray-500">You&apos;ll be redirected to Riot&apos;s login page to verify your account.</p>
+                  <Link
+                    href="/"
+                    className="block text-sm text-gray-500 hover:text-gray-300 transition-colors"
                   >
-                    Simulate Verification Complete
-                  </button>
+                    Skip, I&apos;ll do it later →
+                  </Link>
                 </div>
               )}
 

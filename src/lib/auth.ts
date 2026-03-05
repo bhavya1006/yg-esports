@@ -71,7 +71,7 @@ export const authOptions: NextAuthOptions = {
       if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true, tier: true, mmr: true, verified: true, riotId: true },
+          select: { role: true, tier: true, mmr: true, verified: true, riotId: true, image: true },
         });
         if (dbUser) {
           token.role = dbUser.role;
@@ -79,6 +79,7 @@ export const authOptions: NextAuthOptions = {
           token.mmr = dbUser.mmr;
           token.verified = dbUser.verified;
           token.riotId = dbUser.riotId;
+          token.picture = dbUser.image;
         }
       }
       return token;
@@ -91,6 +92,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).mmr = token.mmr;
         (session.user as any).verified = token.verified;
         (session.user as any).riotId = token.riotId;
+        session.user.image = token.picture as string | null;
       }
       return session;
     },
