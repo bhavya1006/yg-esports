@@ -1,6 +1,43 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function SignInPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSignIn(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        setError("Invalid email or password");
+        return;
+      }
+
+      router.push("/");
+      router.refresh();
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen pt-20 pb-20 relative flex items-center justify-center">
       {/* bg effects */}
@@ -26,16 +63,25 @@ export default function SignInPage() {
         </div>
 
         <div className="cyber-card p-8 clip-cyber animate-fade-in">
-          <form className="space-y-5">
+          <form onSubmit={handleSignIn} className="space-y-5">
+            {/* Error message */}
+            {error && (
+              <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded">
+                {error}
+              </div>
+            )}
+
             {/* Email / Username */}
             <div>
               <label className="block text-xs font-bold tracking-wider uppercase text-gray-400 mb-2">
-                Email or Username
+                Email
               </label>
               <input
-                type="text"
+                type="email"
                 required
                 placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="cyber-input clip-angle-tl"
               />
             </div>
@@ -52,12 +98,14 @@ export default function SignInPage() {
                 type="password"
                 required
                 placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="cyber-input clip-angle-tl"
               />
             </div>
 
-            <button type="submit" className="cyber-btn cyber-btn-primary w-full justify-center text-sm">
-              Sign In
+            <button type="submit" disabled={loading} className="cyber-btn cyber-btn-primary w-full justify-center text-sm disabled:opacity-50">
+              {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 

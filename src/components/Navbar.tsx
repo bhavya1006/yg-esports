@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -15,6 +16,7 @@ const navLinks = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const { data: session, status } = useSession();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-cyber-dark/80 backdrop-blur-xl border-b border-cyber-border">
@@ -58,12 +60,50 @@ export default function Navbar() {
 
           {/* Auth buttons */}
           <div className="hidden lg:flex items-center gap-3">
-            <Link href="/signin" className="cyber-btn text-xs py-2 px-4">
-              Sign In
-            </Link>
-            <Link href="/signup" className="cyber-btn cyber-btn-primary text-xs py-2 px-4">
-              Register
-            </Link>
+            {status === "loading" ? (
+              <div className="w-20 h-8 bg-cyber-surface animate-pulse rounded" />
+            ) : session?.user ? (
+              <>
+                <Link href="/profile" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-cyber-teal transition-colors">
+                  <div className="relative">
+                    <img
+                      src={session.user.image || "/lib-profile/Default.png"}
+                      alt=""
+                      className="w-7 h-7 rounded-full object-cover border border-cyber-teal/40"
+                    />
+                    {(session.user as any).verified === true && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-cyber-teal rounded-full border border-cyber-dark text-[6px] flex items-center justify-center">✓</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="max-w-[100px] truncate leading-tight">{session.user.name}</span>
+                    <span className="text-[10px] leading-tight text-gray-500">
+                      {(session.user as any).verified === true ? (
+                        <span className="text-cyber-teal">Verified</span>
+                      ) : (
+                        <span className="text-yellow-400">Unverified</span>
+                      )}
+                      {" · T" + ((session.user as any).tier || 1)}
+                    </span>
+                  </div>
+                </Link>
+                <button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="cyber-btn text-xs py-2 px-4"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/signin" className="cyber-btn text-xs py-2 px-4">
+                  Sign In
+                </Link>
+                <Link href="/signup" className="cyber-btn cyber-btn-primary text-xs py-2 px-4">
+                  Register
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile toggle */}
@@ -106,20 +146,40 @@ export default function Navbar() {
               </Link>
             ))}
             <div className="pt-3 flex gap-3">
-              <Link
-                href="/signin"
-                onClick={() => setOpen(false)}
-                className="cyber-btn text-xs py-2 px-4 flex-1 justify-center"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/signup"
-                onClick={() => setOpen(false)}
-                className="cyber-btn cyber-btn-primary text-xs py-2 px-4 flex-1 justify-center"
-              >
-                Register
-              </Link>
+              {session?.user ? (
+                <>
+                  <Link
+                    href="/profile"
+                    onClick={() => setOpen(false)}
+                    className="cyber-btn text-xs py-2 px-4 flex-1 justify-center"
+                  >
+                    {session.user.name || "Profile"}
+                  </Link>
+                  <button
+                    onClick={() => { setOpen(false); signOut({ callbackUrl: "/" }); }}
+                    className="cyber-btn cyber-btn-primary text-xs py-2 px-4 flex-1 justify-center"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/signin"
+                    onClick={() => setOpen(false)}
+                    className="cyber-btn text-xs py-2 px-4 flex-1 justify-center"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setOpen(false)}
+                    className="cyber-btn cyber-btn-primary text-xs py-2 px-4 flex-1 justify-center"
+                  >
+                    Register
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

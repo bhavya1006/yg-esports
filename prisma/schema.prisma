@@ -1,0 +1,232 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── AUTH (NextAuth) ───────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── USERS ─────────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  hashedPassword String?
+  image          String?
+  riotId         String?   @unique
+  riotPuuid      String?   @unique
+  discordTag     String?
+  bio            String?   @db.Text
+  role           Role      @default(PLAYER)
+  tier           Int       @default(1)
+  mmr            Int       @default(0)
+  verified       Boolean   @default(false)
+  verificationCode String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  ownedTeams    Team[]           @relation("TeamCaptain")
+  teamMembers   TeamMember[]
+  playerStats   PlayerStats?
+  matchMvps     Match[]          @relation("MatchMvp")
+}
+
+enum Role {
+  PLAYER
+  CAPTAIN
+  ADMIN
+  MODERATOR
+}
+
+// ─── TEAMS ─────────────────────────────────────
+
+model Team {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  tag       String   @unique @db.VarChar(5)
+  logo      String?
+  captainId String
+  tier      Int      @default(1)
+  avgMmr    Int      @default(0)
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  captain       User                   @relation("TeamCaptain", fields: [captainId], references: [id])
+  members       TeamMember[]
+  registrations TournamentRegistration[]
+  homeMatches   Match[]                @relation("HomeTeam")
+  awayMatches   Match[]                @relation("AwayTeam")
+  wonMatches    Match[]                @relation("WinnerTeam")
+}
+
+model TeamMember {
+  id       String     @id @default(cuid())
+  userId   String
+  teamId   String
+  role     MemberRole @default(PLAYER)
+  joinedAt DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+}
+
+enum MemberRole {
+  CAPTAIN
+  PLAYER
+  SUBSTITUTE
+}
+
+// ─── TOURNAMENTS ───────────────────────────────
+
+model Tournament {
+  id          String           @id @default(cuid())
+  name        String
+  description String?          @db.Text
+  tier        String
+  format      String
+  mapPool     String[]
+  slots       Int
+  status      TournamentStatus @default(UPCOMING)
+  sponsored   Boolean          @default(false)
+  sponsorName String?
+  startDate   DateTime
+  regCloseDate DateTime
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  registrations TournamentRegistration[]
+  matches       Match[]
+}
+
+enum TournamentStatus {
+  UPCOMING
+  REGISTRATION_OPEN
+  REGISTRATION_CLOSED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model TournamentRegistration {
+  id           String             @id @default(cuid())
+  tournamentId String
+  teamId       String
+  status       RegistrationStatus @default(PENDING)
+  registeredAt DateTime           @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team       Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, teamId])
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  WAITLISTED
+}
+
+// ─── MATCHES ───────────────────────────────────
+
+model Match {
+  id           String      @id @default(cuid())
+  tournamentId String
+  team1Id      String
+  team2Id      String
+  winnerId     String?
+  mvpId        String?
+  score        String?
+  mapPlayed    String?
+  round        Int
+  bracketPos   Int?
+  status       MatchStatus @default(SCHEDULED)
+  scheduledAt  DateTime?
+  playedAt     DateTime?
+  createdAt    DateTime    @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team1      Team       @relation("HomeTeam", fields: [team1Id], references: [id])
+  team2      Team       @relation("AwayTeam", fields: [team2Id], references: [id])
+  winner     Team?      @relation("WinnerTeam", fields: [winnerId], references: [id])
+  mvp        User?      @relation("MatchMvp", fields: [mvpId], references: [id])
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+  FORFEITED
+}
+
+// ─── PLAYER STATS ──────────────────────────────
+
+model PlayerStats {
+  id            String @id @default(cuid())
+  userId        String @unique
+  kills         Int    @default(0)
+  deaths        Int    @default(0)
+  assists       Int    @default(0)
+  wins          Int    @default(0)
+  losses        Int    @default(0)
+  matchesPlayed Int    @default(0)
+  headshotPct   Float  @default(0)
+  avgDamage     Float  @default(0)
+  clutches      Int    @default(0)
+  aces          Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

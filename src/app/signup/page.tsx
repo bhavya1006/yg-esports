@@ -2,14 +2,53 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const regions = ["India", "SEA", "EU", "NA", "KR", "JP", "BR", "LATAM"];
 
 type VerifyStep = "unverified" | "pending" | "verified";
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [step, setStep] = useState<"register" | "verify">("register");
   const [verifyStatus, setVerifyStatus] = useState<VerifyStep>("unverified");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Form fields
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [riotId, setRiotId] = useState("");
+  const [discordTag, setDiscordTag] = useState("");
+
+  async function handleSignup(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, riotId: riotId || undefined }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Something went wrong");
+        return;
+      }
+
+      // Success — move to verify step
+      setStep("verify");
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen pt-20 pb-20 relative">
@@ -53,12 +92,16 @@ export default function SignUpPage() {
         {step === "register" ? (
           <div className="cyber-card p-8 sm:p-10 clip-cyber animate-fade-in">
             <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setStep("verify");
-              }}
+              onSubmit={handleSignup}
               className="space-y-5"
             >
+              {/* Error message */}
+              {error && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded">
+                  {error}
+                </div>
+              )}
+
               {/* Email */}
               <div>
                 <label className="block text-xs font-bold tracking-wider uppercase text-gray-400 mb-2">
@@ -68,6 +111,8 @@ export default function SignUpPage() {
                   type="email"
                   required
                   placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="cyber-input clip-angle-tl"
                 />
               </div>
@@ -82,6 +127,8 @@ export default function SignUpPage() {
                   required
                   minLength={8}
                   placeholder="Min 8 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="cyber-input clip-angle-tl"
                 />
               </div>
@@ -96,6 +143,8 @@ export default function SignUpPage() {
                     type="text"
                     required
                     placeholder="YourRiotTag"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     className="cyber-input clip-angle-tl"
                   />
                 </div>
@@ -135,16 +184,20 @@ export default function SignUpPage() {
                     <input
                       type="text"
                       placeholder="user#0000"
+                      value={discordTag}
+                      onChange={(e) => setDiscordTag(e.target.value)}
                       className="cyber-input clip-angle-tl"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-bold tracking-wider uppercase text-gray-400 mb-2">
-                      Twitch Username
+                      Riot ID (optional)
                     </label>
                     <input
                       type="text"
-                      placeholder="twitch.tv/you"
+                      placeholder="Name#TAG"
+                      value={riotId}
+                      onChange={(e) => setRiotId(e.target.value)}
                       className="cyber-input clip-angle-tl"
                     />
                   </div>
@@ -164,11 +217,13 @@ export default function SignUpPage() {
                 </div>
               </div>
 
-              <button type="submit" className="cyber-btn cyber-btn-primary w-full justify-center text-sm mt-4">
-                Create Account & Verify
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
+              <button type="submit" disabled={loading} className="cyber-btn cyber-btn-primary w-full justify-center text-sm mt-4 disabled:opacity-50">
+                {loading ? "Creating Account..." : "Create Account & Verify"}
+                {!loading && (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                )}
               </button>
             </form>
 
@@ -251,7 +306,7 @@ export default function SignUpPage() {
 
         {/* Security note */}
         <div className="mt-6 p-4 border border-cyber-border/50 bg-cyber-card/30 text-center text-xs text-gray-600 rounded">
-          🔒 Your data is encrypted. We only store Riot account IDs — never passwords. Riot OAuth ensures secure account linking.
+          🔒 Your password is securely hashed. We never store plain-text passwords.
         </div>
       </div>
     </div>
