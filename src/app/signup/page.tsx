@@ -6,12 +6,9 @@ import { useRouter } from "next/navigation";
 
 const regions = ["India", "SEA", "EU", "NA", "KR", "JP", "BR", "LATAM"];
 
-type VerifyStep = "unverified" | "pending" | "verified";
-
 export default function SignUpPage() {
   const router = useRouter();
   const [step, setStep] = useState<"register" | "verify">("register");
-  const [verifyStatus, setVerifyStatus] = useState<VerifyStep>("unverified");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -68,25 +65,30 @@ export default function SignUpPage() {
           </p>
         </div>
 
-        {/* Verification progress bar */}
+        {/* Progress steps */}
         <div className="flex items-center justify-center gap-2 mb-10">
-          {(["unverified", "pending", "verified"] as VerifyStep[]).map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
-              <div
-                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all ${
-                  verifyStatus === s
-                    ? "border-cyber-teal bg-cyber-teal/20 text-cyber-teal"
-                    : (["unverified", "pending", "verified"].indexOf(verifyStatus) > i
-                      ? "border-cyber-teal bg-cyber-teal text-cyber-dark"
-                      : "border-cyber-border text-gray-600")
-                }`}
-              >
-                {["unverified", "pending", "verified"].indexOf(verifyStatus) > i ? "✓" : i + 1}
+          {(["Register", "Verify"] as const).map((label, i) => {
+            const stepKey = i === 0 ? "register" : "verify";
+            const isActive = step === stepKey;
+            const isDone = step === "verify" && i === 0;
+            return (
+              <div key={label} className="flex items-center gap-2">
+                <div
+                  className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all ${
+                    isActive
+                      ? "border-cyber-teal bg-cyber-teal/20 text-cyber-teal"
+                      : isDone
+                        ? "border-cyber-teal bg-cyber-teal text-cyber-dark"
+                        : "border-cyber-border text-gray-600"
+                  }`}
+                >
+                  {isDone ? "✓" : i + 1}
+                </div>
+                <span className="text-xs text-gray-500 hidden sm:inline">{label}</span>
+                {i < 1 && <div className="w-8 h-[2px] bg-cyber-border" />}
               </div>
-              <span className="text-xs text-gray-500 hidden sm:inline capitalize">{s}</span>
-              {i < 2 && <div className="w-8 h-[2px] bg-cyber-border" />}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {step === "register" ? (
@@ -237,77 +239,54 @@ export default function SignUpPage() {
         ) : (
           /* Verify step */
           <div className="cyber-card p-8 sm:p-10 clip-cyber animate-fade-in">
-            <div className="text-center">
-              <div className="text-4xl mb-4">🔗</div>
-              <h2 className="text-2xl font-black mb-2">
-                VERIFY YOUR <span className="text-cyber-teal">RIOT ACCOUNT</span>
-              </h2>
-              <p className="text-gray-400 text-sm mb-8 max-w-sm mx-auto">
-                Link your Riot account via OAuth to confirm ownership. This enables verified rankings, team eligibility, and a trusted badge.
-              </p>
-
-              {/* Benefits */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                {[
-                  { icon: "🏆", label: "Tournament Eligibility" },
-                  { icon: "👥", label: "Team Creation" },
-                  { icon: "✅", label: "Verified Badge" },
-                ].map((b) => (
-                  <div key={b.label} className="p-4 bg-cyber-surface/50 border border-cyber-border rounded text-center">
-                    <div className="text-xl mb-1">{b.icon}</div>
-                    <div className="text-xs font-bold text-gray-400">{b.label}</div>
-                  </div>
-                ))}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-yellow-400/10 flex items-center justify-center">
+                <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
               </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Verify Riot Account</h2>
+                <p className="text-xs text-gray-500">Sign in with your Riot account to prove ownership</p>
+              </div>
+            </div>
 
-              {verifyStatus === "unverified" && (
-                <div className="space-y-3">
-                  <a
-                    href="/api/verify/riot/start"
-                    className="cyber-btn cyber-btn-primary justify-center w-full max-w-xs mx-auto"
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                    </svg>
-                    Sign in with Riot
-                  </a>
-                  <Link
-                    href="/"
-                    className="block text-sm text-gray-500 hover:text-gray-300 transition-colors"
-                  >
-                    Skip, I&apos;ll do it later →
-                  </Link>
-                </div>
-              )}
+            <p className="text-sm text-gray-400 mb-4">
+              To verify your identity, you&apos;ll be redirected to Riot&apos;s official sign-in page.
+              After logging in, your Riot ID will be linked to your YG Esports account.
+              No one else can claim your Riot ID.
+            </p>
 
-              {verifyStatus === "pending" && (
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 text-sm rounded">
-                    <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
-                    Redirecting to Riot...
-                  </div>
-                  <p className="text-xs text-gray-500">You&apos;ll be redirected to Riot&apos;s login page to verify your account.</p>
-                  <Link
-                    href="/"
-                    className="block text-sm text-gray-500 hover:text-gray-300 transition-colors"
-                  >
-                    Skip, I&apos;ll do it later →
-                  </Link>
+            {/* Benefits */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              {[
+                { icon: "🏆", label: "Tournament Eligibility" },
+                { icon: "👥", label: "Team Creation" },
+                { icon: "✅", label: "Verified Badge" },
+              ].map((b) => (
+                <div key={b.label} className="p-4 bg-cyber-surface/50 border border-cyber-border rounded text-center">
+                  <div className="text-xl mb-1">{b.icon}</div>
+                  <div className="text-xs font-bold text-gray-400">{b.label}</div>
                 </div>
-              )}
+              ))}
+            </div>
 
-              {verifyStatus === "verified" && (
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-cyber-teal/10 border border-cyber-teal/30 text-cyber-teal text-sm rounded">
-                    <span className="text-lg">✅</span>
-                    Riot Account Verified!
-                  </div>
-                  <p className="text-xs text-gray-500">You&apos;re all set. Your verified badge is now active.</p>
-                  <Link href="/" className="cyber-btn cyber-btn-primary justify-center w-full max-w-xs mx-auto mt-4">
-                    Go to Dashboard
-                  </Link>
-                </div>
-              )}
+            <div className="space-y-3">
+              <a
+                href="/api/verify/riot/start"
+                className="cyber-btn cyber-btn-primary justify-center w-full max-w-xs mx-auto inline-flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                Sign in with Riot
+              </a>
+              <Link
+                href="/"
+                className="block text-center text-sm text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                Skip, I&apos;ll do it later →
+              </Link>
             </div>
           </div>
         )}
